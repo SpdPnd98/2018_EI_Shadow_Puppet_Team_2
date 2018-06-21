@@ -10,6 +10,4 @@ Puppet::Puppet(int pin, float servoMidAngle)
 }
 
 
-}
-
 
