@@ -30,8 +30,11 @@ bool prototypeState = 1;
 
 // Define puppet indices
 #define ROCKET_1 4
-#define ROCKET_2 1
-#define ROVER_ARM 2
+#define ROCKET_2 8
+#define ROVER_ARM 14
+#define ROCKS 10
+#define SOLO_KNUCK 11
+#define KNUCKLES 9
 
 // Define Light control pin (relay, Noe=rmally Open)
 #define RELAY_PIN 12
@@ -47,8 +50,8 @@ bool prototypeState = 1;
 #define ROCKET_MOV_DUR 2755 // Through trial and error, this seems to be the right value /*Archived*/
 
 // Global variables
-int sec = 0;
-int firstRocketTime = 0;
+unsigned long sec = 0;
+unsigned long firstRocketTime = 0;
 byte DCMotorPinA = 2; // DC motor Pin A
 byte DCMotorPinB = 4; // DC motor Pin B
 byte DCMotorPinPWM = 3; //DC motor PWM pin
@@ -110,6 +113,9 @@ void lightOFF(void);
 // Puppets declaration
 Puppet rocket1(ROCKET_1);
 Puppet filter(FILTER);
+Puppet rocks(ROCKS);
+Puppet solo_knuck(SOLO_KNUCK);
+Puppet knuckles(KNUCKLES);
 
 void setup()
 {
@@ -129,8 +135,8 @@ void setup()
   pinMode(DCMotorPinB, OUTPUT);
   pinMode(DCMotorPinPWM, OUTPUT);
   pinMode(DCIR, INPUT);
-  
-  
+
+
   // Initialize all puppets to stop position
 
   // Rocket 1:
@@ -148,11 +154,14 @@ void setup()
   DCmotorstop();
 
   //Rocks:
+  rocks.pos_servo(0);
 
   // Solo Knuckles:
-
+  solo_knuck.pos_servo(170);
+  
   // Group Knuckles:
-
+  knuckles.pos_servo(170);
+  
   // Light:
 
   // Filter:
@@ -167,10 +176,11 @@ void setup()
 
 void loop()
 {
-  //first_Segment();
-  rocket1.up(DOWN_PWM);
+  first_Segment();
   //second_Segment();
   third_Segment();
+  lightOFF();
+  delay(3000);
 }
 
 int pulseWidth(int angle)
@@ -254,13 +264,13 @@ void first_Segment()
     Serial.print("Duration is: ");
     Serial.println(firstRocketTime);
     rocket1.down(UP_PWM);
-    delay(firstRocketTime - 60);
+    delay(firstRocketTime - 150);
     //while (!digitalRead(ROCKET1_IR));
     rocket1.stop_puppet();
     delay(firstRocketTime);
-      rocket1.stop_puppet();
+    rocket1.stop_puppet();
     }
-  else*/ if (!prototypeState) {
+    else */if (!prototypeState) {
     ;
   }
   while (digitalRead(INIT_IR))Serial.println("1st Segment is completed, flash INIT_IR to continue");
@@ -280,22 +290,66 @@ void third_Segment()
   // MP3 play
 
   // Rocket comes down
-  /*Serial.print("The firstrockettime is: ");
+  Serial.print("The firstrockettime is: ");
   Serial.println(firstRocketTime);
-  delay(2000);
+
   rocket1.down(UP_PWM);
   delay(firstRocketTime - 60);
   //while (!digitalRead(ROCKET1_IR));
-  rocket1.stop_puppet();*/
+  rocket1.stop_puppet();
 
   // MP3 sound for rover entrance
 
-
+  delay(2000);
   // Rover moves to the screen
-  DCmotormove(1,0,255);
+  DCmotormove(1, 0, 255); // forward
   Serial.println(digitalRead(DCIR));
-  while(digitalRead(DCIR) != 0){
-    ;
+  int temp = digitalRead(DCIR);
+  while (temp != 0) {
+    Serial.println(temp);
+    temp = digitalRead(DCIR);
   }
   DCmotorstop();
+  if (prototypeState) {
+    delay(1000);
+
+    DCmotormove(0, 1, 255); // backward
+    temp = digitalRead(DCIR);
+    Serial.println(digitalRead(DCIR));
+    while (digitalRead(DCIR) != 0) {
+      Serial.println(temp);
+      temp = digitalRead(DCIR);
+    }
+    DCmotorstop();
+  }
+  rocks.pos_servo(170);
+  //delay(1000);
+
+ delay(2000);
+
+ solo_knuck.pos_servo(20);
+ delay(1000);
+
+  knuckles.pos_servo(10);
+  delay(3000);
+  
+  unsigned long group = millis();
+  while((millis()) < (group + 3000))
+  {
+    if (millis() >(group + 50)) solo_knuck.pos_servo(40);
+    knuckles.pos_servo(45);
+    delay(200);
+    if (millis() >(group + 50)) solo_knuck.pos_servo(1);
+    knuckles.pos_servo(10);
+    delay(200);
+    Serial.print(group);
+    Serial.print("   v.s.   ");
+    Serial.println(millis());
+  }
+
+ knuckles.pos_servo(170);
+ solo_knuck.pos_servo(170);
+   rocks.pos_servo(0);
+ delay(2000);
+
 }
